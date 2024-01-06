@@ -3,6 +3,9 @@ from sympy import *
 import tkinter as tk
 from numpy import sin, cos
 from sympy import symbols
+import sympy as sp
+import numpy as np
+import matplotlib.pyplot as plt
 from sympy import simplify
 from tkinter import messagebox
 #=====================================
@@ -225,12 +228,33 @@ class Home():
             if vv.get() == 'atanh()': 
                   messagebox.showinfo("EROR",'The equation is not complete')    
 
-
-
             get1 = vv.get()
             z  = expand(get1)
             z2 = str(pretty(z))
             Labelmain.set(z2)
+        def graph():
+            if vv.get() == '': 
+                  messagebox.showinfo("EROR",'Fill the cell')
+            get1 = vv.get()
+            equation = sp.sympify(get1)
+            x = sp.Symbol('x')
+            name = str(equation)
+            solutions = sp.solve(equation, x)
+            print("حلول المعادلة: ", solutions)
+            x_vals = np.linspace(-5, 5, 1000)
+            y_vals = [float(equation.subs(x, val).evalf()) for val in x_vals]
+
+            plt.plot(x_vals, y_vals)
+            plt.xlabel('x')
+            plt.ylabel('y')
+
+            plt.xlim(xd.get(), yd.get())
+            plt.ylim(xr.get(), yr.get())
+            
+            plt.title(f'y = {name}')
+            plt.grid(True)
+            plt.show()
+            plt.close()
   
     
         vv = StringVar()
@@ -238,6 +262,28 @@ class Home():
         
         functionsset = Entry(Home,bg='#f8f8ff',fg='#080808',font=2,textvariable=vv)
         functionsset.place(x=250,y=50,height=50,width=850)
+        dom2 = Label(Home,bg='#f8f8ff',fg='#080808',font=2,text="Domain:",)
+        dom2.place(x=620,y=105)
+        reng2 = Label(Home,bg='#f8f8ff',fg='#080808',font=2,text="Range:",)
+        reng2.place(x=620,y=125)
+        #=======================================================
+        # (x,)
+        xd = StringVar()
+        dom = Entry(Home,bg='#f8f8ff',fg='#080808',font=2,textvariable=xd)
+        dom.place(x=690,y=108,height=20,width=40)
+        # (x,)
+        xr = StringVar()
+        reng = Entry(Home,bg='#f8f8ff',fg='#080808',font=2,textvariable=xr)
+        reng.place(x=690,y=130,height=20,width=40)
+        # (,y)
+        yd = StringVar()
+        dom22 = Entry(Home,bg='#f8f8ff',fg='#080808',font=2,textvariable=yd)
+        dom22.place(x=730,y=108,height=20,width=40)
+        # (,y)
+        yr = StringVar()
+        reng22 = Entry(Home,bg='#f8f8ff',fg='#080808',font=2,textvariable=yr)
+        reng22.place(x=730,y=130,height=20,width=40)
+        #==========================================================
         popup_menu(functionsset,Home)
         functionsset2 = Label(Home,bg='#f8f8ff',fg='#080808',font=2,text="0.0",textvariable=Labelmain)
         functionsset2.place(x=250,y=150,height=100,width=850)
@@ -247,6 +293,8 @@ class Home():
         Clear1.place(x=360,y=110)
         expand22 = Button(Home,text='  expand  ',bg='#537FE7',fg='#E9F8F9',bd=0,font=2,command=expand2)
         expand22.place(x=440,y=110)
+        Graph22 = Button(Home,text='  Graph  ',bg='#537FE7',fg='#E9F8F9',bd=0,font=2,command=graph)
+        Graph22.place(x=530,y=110)
         mainframe = Frame(Home , bg="#3F61B0",height=50,width=1800)
         mainframe.place(x=0,y=0)
         mainframe.pack_propagate(False)

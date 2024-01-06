@@ -7,9 +7,13 @@ from PIL import ImageTk, Image
 from tkinter import*
 import numpy as np
 import cirq
-
-
-
+from scipy.special import sph_harm
+import seaborn as sns
+from fpdf import FPDF
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from tkinter import filedialog
+import PIL
 class QuantumLab():
     def QuantumLab(home):
         QuantumLab = Frame(home,bg='#f8f8ff',width='1800',height='1000')
@@ -709,18 +713,26 @@ class QuantumLab():
                     qqx18.config(state='normal')
 
                 def addq18():
-                    if wqs33.get() >= 25 : 
-                            messagebox.showinfo("Qubit number",'The maximum number of Qubits is 25 from 0 to 24')
-                    wsax33 =wqs33.get()
-                    circuit.append(cirq.measure(qbits[wsax33]))
+                    qubit_index = wqs33.get()
+                    
+                    if any(op.qubits[0].x == qubit_index and isinstance(op.gate, cirq.MeasurementGate) for moment in circuit for op in moment.operations):
+                        messagebox.showerror("Error", "Qubit {} is already being measured.".format(qubit_index))
+                        return
+                    circuit.append(cirq.measure(qbits[qubit_index]))
                     asw.set(circuit)
 
                 def addq19(): 
-                    xs = wqs34.get()
-                    ys = wqs35.get()      
-                    for i in range(xs,ys):
+                    start_qubit = wqs34.get()
+                    end_qubit = wqs35.get()
+
+                    for qubit_index in range(start_qubit, end_qubit + 1):
+                        if any(op.qubits[0].x == qubit_index and isinstance(op.gate, cirq.MeasurementGate) for moment in circuit for op in moment.operations):
+                            messagebox.showerror("Error", "Qubit {} is already being measured.".format(qubit_index))
+                            return
+                    
+                    for i in range(start_qubit, end_qubit + 1):
                         circuit.append(cirq.measure(qbits[i]))
-                        asw.set(circuit)
+                    asw.set(circuit)
                 wqs33=IntVar() 
                 zw12 = Label(MeasurementGate,text='Qubit number',bg='#f8f8ff',fg='#080808',font=2)    
                 zw12.place(x=50,y=1,height=30,width=90)   
@@ -825,7 +837,7 @@ class QuantumLab():
             sad2.set(rr2)
             waa2 = Label(Simulation,bg='#f8f8ff',fg='#080808',font=2,text="0.0",height=26,width=25,textvariable=sad2,anchor="n")
             waa2.place(x=180,y=100)                   
-        #--------------------------------------------------------
+        #==========================================================        
         def blochsphere():
             if sad.get() == '': 
                 messagebox.showinfo("blochsphere",'Building a quantum circuit to simulate the blochsphere')
@@ -835,46 +847,166 @@ class QuantumLab():
                     z = np.abs(qubit_state[0])**2 - np.abs(qubit_state[1])**2
                     return x, y, z
                 def plot_bloch_sphere(qubit_state):
-                    fig = plt.figure(figsize=(6, 6))
+                    fig = plt.figure(figsize=(8, 8))
                     ax = fig.add_subplot(111, projection="3d")
-
-                    # Set sphere color and alpha
-                    ax.set_facecolor((0.95, 0.95, 0.95))
+                    ax.set_facecolor((1.0, 1.0, 1.0))
                     ax.alpha = 0.1
-
-                    # Create grid of sphere points
-                    u, v = np.mgrid[0:2*np.pi:50j, 0:np.pi:25j]
-                    x = np.cos(u)*np.sin(v)
-                    y = np.sin(u)*np.sin(v)
+                    u, v = np.mgrid[0:2 * np.pi:50j, 0:np.pi:25j]
+                    x = np.cos(u) * np.sin(v)
+                    y = np.sin(u) * np.sin(v)
                     z = np.cos(v)
-                    ax.plot_wireframe(x, y, z, color="gray", alpha=0.2)
-
-                    # Plot the Bloch vector and basis vectors
+                    ax.plot_wireframe(x, y, z, color="lightgray", alpha=0.2)
                     x, y, z = cirq_state_to_bloch_coordinates(qubit_state)
-                    plot_bloch_vector([0, 0, 1], ax=ax)
-                    plot_bloch_vector([1, 0, 0], ax=ax)
-                    plot_bloch_vector([0, 1, 0], ax=ax)
-                    plot_bloch_vector([x, y, z], ax=ax)
-
-                    # Set plot limits and axis labels
+                    plot_bloch_vector([0, 0, 1], ax=ax, color='b', label='|0⟩')
+                    plot_bloch_vector([1, 0, 0], ax=ax, color='g', label='|1⟩')
+                    plot_bloch_vector([0, 1, 0], ax=ax, color='r', label='|+⟩ / |−⟩')
+                    plot_bloch_vector([x, y, z], ax=ax, color='m', label='Qubit State')
                     ax.set_xlim(-1.2, 1.2)
                     ax.set_ylim(-1.2, 1.2)
                     ax.set_zlim(-1.2, 1.2)
                     ax.set_xlabel("X")
                     ax.set_ylabel("Y")
                     ax.set_zlabel("Z")
-
+                    ax.legend()
+                    omgf2 = "path/blochsphere.png"
+                    plt.savefig(omgf2)
+                    blochsphere_window = Toplevel()
+                    blochsphere_window.iconbitmap('photo\logo.ico')
+                    blochsphere_window.title("Blochsphere")
+                    image2 = PIL.Image.open(omgf2)
+                    tk_image2 = ImageTk.PhotoImage(image2)
+                    label2 = Label(blochsphere_window, image=tk_image2)
+                    label2.image = tk_image2 
+                    label2.pack()
+                    blochsphere_window.protocol("WM_DELETE_WINDOW", blochsphere_window.destroy)
+                    def save_image2():
+                        file_path2 = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")], initialfile="PsiLab")
+                        if file_path2:
+                            omgf2 = "path/blochsphere.png"  
+                            image =  PIL.Image.open(omgf2)
+                            image.save(file_path2)
+                            messagebox.showinfo("save", "The Image has been saved.")
+                    save_button2 = Button(blochsphere_window, text="Save Image",bg='#537FE7',fg='#E9F8F9', command=save_image2)
+                    save_button2.pack()
+                    blochsphere_window.mainloop()
                     plt.show()
-                    
-                def plot_bloch_vector(vector, ax):
-                    ax.plot([0,vector[0]], [0,vector[1]], [0,vector[2]], 
-                            linewidth=2, marker='o', markersize=8)
-                        
+                #--------------------------------------    
+                def plot_bloch_vector(vector, ax, color, label):
+                    ax.plot([0, vector[0]], [0, vector[1]], [0, vector[2]],
+                            linewidth=2, marker='o', markersize=10, color=color, label=label)       
                 simulator = cirq.Simulator()
                 result = simulator.simulate(circuit)
                 state_vector = result.final_state_vector
                 plot_bloch_sphere(state_vector)
-        #--------------------------------------
+        #==========================================================        
+        def ShowAliGraf():
+            circuit.append(cirq.measure(qbits, key='m'))
+            simulator = cirq.Simulator()
+            results = simulator.run(circuit, repetitions=1000)
+            histogram = results.histogram(key='m')
+            sns.set(style="whitegrid")
+            plt.figure(figsize=(8, 6))
+            ax = sns.barplot(x=list(histogram.keys()), y=list(histogram.values()), palette="viridis")
+            ax.set(xlabel='Measurement value', ylabel="Number of iterations")
+            omgf = "path/ShowAliGraf.png"
+            plt.savefig(omgf)
+            sub_window = Toplevel()
+            sub_window.iconbitmap('photo\logo.ico') 
+            sub_window.title("simulator")
+            image = PIL.Image.open(omgf)
+            tk_image = ImageTk.PhotoImage(image)
+            label = Label(sub_window, image=tk_image)
+            label.image = tk_image 
+            label.pack()
+            sub_window.protocol("WM_DELETE_WINDOW", sub_window.destroy)
+            def save_image():
+                file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")], initialfile="PsiLab")
+                if file_path:
+                    omgf = "path/ShowAliGraf.png"    
+                    image =  PIL.Image.open(omgf)
+                    image.save(file_path)
+                    messagebox.showinfo("save", "The Image has been saved.")
+            save_button = Button(sub_window, text="Save Image",bg='#537FE7',fg='#E9F8F9', command=save_image)
+            save_button.pack()
+            sub_window.mainloop()
+            plt.show()
+        #==========================================================        
+        def save():
+            pdf_file = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")] , initialfile="PsiLab")
+            c = canvas.Canvas(pdf_file, pagesize=letter)
+            c.drawImage("photo/logo-03.png", 20, 700, width=180, height=100)
+            c.drawString(20, 700, "PsiLab")
+            c.drawString(20, 700, "______________________________________________________________________________________")
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(20, 680, "blochsphere:") 
+            c.setFont("Helvetica", 12)
+            c.drawImage("path/blochsphere.png", 80, 220, width=400, height=400) 
+            c.showPage()   
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(20, 680, "ShowAliGraf:") 
+            c.setFont("Helvetica", 12)
+            c.drawImage("path/ShowAliGraf.png", 80, 30, width=400, height=400) 
+            c.save()
+            messagebox.showinfo("save", "The file has been saved.")
+        #=========================================
+        def RemoveGate():
+            RemoveGate = Toplevel(home)
+            RemoveGate.geometry("500x200+50+200")
+            RemoveGate.configure(background="#f8f8ff")
+            RemoveGate.resizable(False,False)
+            RemoveGate.title("Remove Gate")
+            RemoveGate.iconbitmap('photo\logo.ico')
+            RemoveGate.protocol("WM_DELETE_WINDOW", lambda: close_window(RemoveGate))
+            lw2.config(state='disabled')
+            def close_window(window):
+                window.destroy()
+                lw2.config(state='normal')
+            #=========================================
+            qb = StringVar()
+            ss = int(qb.get()) if qb.get().isdigit() else 0
+            #--------------------------------------------------
+            RemoveGate1 = Label(RemoveGate,text='Q(      )',font=("bold",30),bg='#f8f8ff',fg='#080808')    
+            RemoveGate1.place(x=50,y=50,height=100,width=200) 
+            RemoveGate2 = Spinbox(RemoveGate,text='..',width=4,font=("bold",15),bg='#3F61B0',fg='#FFFFFF',from_=0, to=24,textvariable=qb)    
+            RemoveGate2.place(x=140,y=90) 
+            RemoveGate11 = Label(RemoveGate,text='________',font=("bold",30),bg='#f8f8ff',fg='#080808')    
+            RemoveGate11.place(x=220,y=35,height=100,width=200) 
+            #================================================
+            def remove_last_gate(circuit, target_qubit):
+                operations_list = list(circuit.all_operations())
+                
+                if len(operations_list) > 0:
+                    last_operation = None
+                    
+                    for operation in reversed(operations_list):
+                        if any(qubit in target_qubit for qubit in operation.qubits):
+                            last_operation = operation
+                            break
+                    
+                    if last_operation is not None:
+                        new_circuit = cirq.Circuit()
+                        
+                        for operation in operations_list:
+                            if operation is not last_operation:
+                                new_circuit.append(operation)
+                        
+                        return new_circuit
+                    else:
+                        messagebox.showinfo("circuit",'There are gates on the specified qubit.')
+                        return circuit
+                else:
+                    messagebox.showinfo("circuit",'The circle is empty, gates cannot be removed.')
+                    return circuit
+            #-----------------------------------------
+            def remove_gate_command():
+                nonlocal circuit, ss
+                ss = int(qb.get()) if qb.get().isdigit() else 0
+                new_circuit = remove_last_gate(circuit, [qbits[ss]])
+                circuit = new_circuit 
+                asw.set(circuit) 
+            RemoveGate3 = Button(RemoveGate,text=' Remove Gate ',bg='#537FE7',fg='#E9F8F9',bd=0,font=2,command=remove_gate_command)
+            RemoveGate3.place(x=200,y=150,width=100)
+        #=========================================
         def Clear_circuit():
             circuit[:] = []   
             asw.set(circuit)
@@ -889,10 +1021,18 @@ class QuantumLab():
         lw.place(x=20,y= 20)
         lw2 = Button(wfdw, text="Simulation",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=Simulation)
         lw2.place(x=20,y= 80)
-        lw3 = Button(wfdw, text="Bloch Sphere",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=blochsphere)
+        lw3 = Button(wfdw, text="Create Gate",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=0)
         lw3.place(x=20,y= 140)
-        lw4 = Button(wfdw, text="Clear Circuit",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=Clear_circuit)
+        lw4 = Button(wfdw, text="Bloch Sphere",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=blochsphere)
         lw4.place(x=20,y= 200)
+        lw5 = Button(wfdw, text="Show Ali Graf",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=ShowAliGraf)
+        lw5.place(x=20,y= 260)
+        lw6 = Button(wfdw, text="Clear Circuit",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=Clear_circuit)
+        lw6.place(x=20,y= 320)
+        lw7 = Button(wfdw, text="Remove Gate",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=RemoveGate)
+        lw7.place(x=20,y= 380)
+        lw8 = Button(wfdw, text="Save",font=('Bold',20),bd=0,bg="#DFDFE6",fg='#3F61B0',activebackground='#3F61B0',activeforeground='#E9F8F9',command=save)
+        lw8.place(x=20,y= 440)
         #--------------------------------------
         h4f.pack_propagate(False)
         l4f = Label(h4f,text='Quantum Lab', bg="#3F61B0",fg='#E9F8F9',font=('Bold',20))

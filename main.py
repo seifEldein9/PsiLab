@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 from PIL import ImageTk, Image 
+import PIL
+from fpdf import FPDF
+
 #--------------------------------------------
 from Home import*
 from QuantumLab import*
